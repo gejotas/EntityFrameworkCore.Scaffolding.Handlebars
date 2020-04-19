@@ -65,6 +65,9 @@ namespace Microsoft.EntityFrameworkCore.Design
             var scaffoldingOptions = new HandlebarsScaffoldingOptions();
             if (configureOptions == null)
                 configureOptions = options => options.ReverseEngineerOptions = ReverseEngineerOptions.DbContextAndEntities;
+
+            services.AddSingleton(typeof(ITemplateConfigurationService), typeof(TemplateConfigurationService));
+
             configureOptions(scaffoldingOptions);
             services.Configure(configureOptions);
 

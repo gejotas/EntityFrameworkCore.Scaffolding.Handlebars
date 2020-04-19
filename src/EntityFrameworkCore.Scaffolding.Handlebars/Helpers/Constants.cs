@@ -38,6 +38,19 @@
         /// <summary>DbContext DbSets template.</summary>
         public const string DbContextDbSetsTemplate = "DbSets";
 
+        /// <summary>Files names for configuration files.</summary>
+        public static class ConfigurationFiles
+        {
+            /// <summary>Prefix for configuration files.</summary>
+            public const string FilePrefix = "efc.handlebar";
+            
+            /// <summary> File extension</summary>
+            public const string FileExtension = "json";
+           
+            /// <summary> File name of variables file.</summary>
+            public const string VariablesFile = "variables";
+        }
+
         /// <summary>C# template folders.</summary>
         public static class CSharpTemplateDirectories
         {

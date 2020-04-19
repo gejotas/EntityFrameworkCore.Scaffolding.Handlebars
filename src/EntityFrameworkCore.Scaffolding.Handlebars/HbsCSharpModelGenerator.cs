@@ -20,7 +20,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
     public class HbsCSharpModelGenerator : CSharpModelGenerator
     {
         private const string FileExtension = ".cs";
-        private readonly IOptions<HandlebarsScaffoldingOptions> _options;
+        private readonly HandlebarsScaffoldingOptions _options;
 
         /// <summary>
         /// Handlebars helper service.
@@ -48,6 +48,11 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
         protected virtual IEntityTypeTransformationService EntityTypeTransformationService { get; }
 
         /// <summary>
+        /// Service for dealing with template configuration
+        /// </summary>
+        protected ITemplateConfigurationService TemplateConfigurationService { get; }
+
+        /// <summary>
         /// Constructor for the HbsCSharpModelGenerator.
         /// </summary>
         /// <param name="dependencies">Service dependencies parameter class for HbsCSharpModelGenerator.</param>
@@ -59,6 +64,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
         /// <param name="entityTypeTemplateService">Template service for the entity types generator.</param>
         /// <param name="entityTypeTransformationService">Service for transforming entity definitions.</param>
         /// <param name="options">Handlebar scaffolding options</param>
+        /// <param name="templateConfigurationService">Template configuration service.</param>
         public HbsCSharpModelGenerator(
             [NotNull] ModelCodeGeneratorDependencies dependencies, 
             [NotNull] ICSharpDbContextGenerator cSharpDbContextGenerator, 
@@ -68,7 +74,8 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
             [NotNull] IDbContextTemplateService dbContextTemplateService,
             [NotNull] IEntityTypeTemplateService entityTypeTemplateService,
             [NotNull] IEntityTypeTransformationService entityTypeTransformationService,
-            [NotNull] IOptions<HandlebarsScaffoldingOptions> options)
+            [NotNull] IOptions<HandlebarsScaffoldingOptions> options,
+            [NotNull] ITemplateConfigurationService templateConfigurationService)
             : base(dependencies, cSharpDbContextGenerator, cSharpEntityTypeGenerator)
         {
             HandlebarsHelperService = handlebarsHelperService;
@@ -76,7 +83,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
             DbContextTemplateService = dbContextTemplateService;
             EntityTypeTemplateService = entityTypeTemplateService;
             EntityTypeTransformationService = entityTypeTransformationService;
-            _options = options;
+            _options = templateConfigurationService.SetOptions(options.Value);
         }
 
         /// <summary>
@@ -123,7 +130,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
 
             if (!(CSharpEntityTypeGenerator is NullCSharpEntityTypeGenerator))
             {
-                foreach (var entityType in model.GetScaffoldEntityTypes(_options.Value))
+                foreach (var entityType in model.GetScaffoldEntityTypes(_options))
                 {
                     generatedCode = CSharpEntityTypeGenerator.WriteCode(
                         entityType,

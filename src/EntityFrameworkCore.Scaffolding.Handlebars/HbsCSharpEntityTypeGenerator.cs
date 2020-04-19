@@ -25,7 +25,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
     /// </summary>
     public class HbsCSharpEntityTypeGenerator : CSharpEntityTypeGenerator
     {
-        private readonly IOptions<HandlebarsScaffoldingOptions> _options;
+        private readonly HandlebarsScaffoldingOptions _options;
 
         /// <summary>
         /// CSharp helper.
@@ -63,23 +63,30 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
         public virtual IEntityTypeTransformationService EntityTypeTransformationService { get; }
 
         /// <summary>
+        /// Service for dealing with template configuration
+        /// </summary>
+        protected ITemplateConfigurationService TemplateConfigurationService { get; }
+
+        /// <summary>
         /// Constructor for the Handlebars entity types generator.
         /// </summary>
         /// <param name="cSharpHelper">CSharp helper.</param>
         /// <param name="entityTypeTemplateService">Template service for the entity types generator.</param>
         /// <param name="entityTypeTransformationService">Service for transforming entity definitions.</param>
         /// <param name="options">Handlebar scaffolding options.</param>
+        /// <param name="templateConfigurationService">Template configuration service.</param>
         public HbsCSharpEntityTypeGenerator(
             [NotNull] ICSharpHelper cSharpHelper,
             [NotNull] IEntityTypeTemplateService entityTypeTemplateService,
             [NotNull] IEntityTypeTransformationService entityTypeTransformationService,
-            [NotNull] IOptions<HandlebarsScaffoldingOptions> options)
+            [NotNull] IOptions<HandlebarsScaffoldingOptions> options,
+            [NotNull] ITemplateConfigurationService templateConfigurationService)
             : base(cSharpHelper)
         {
             CSharpHelper = cSharpHelper;
             EntityTypeTemplateService = entityTypeTemplateService;
             EntityTypeTransformationService = entityTypeTransformationService;
-            _options = options;
+            _options = templateConfigurationService.SetOptions(options.Value);
         }
 
         /// <summary>
@@ -97,9 +104,9 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
             UseDataAnnotations = useDataAnnotations;
             TemplateData = new Dictionary<string, object>();
 
-            if (_options.Value.TemplateData != null)
+            if (_options.TemplateData != null)
             {
-                foreach (KeyValuePair<string, object> entry in _options.Value.TemplateData)
+                foreach (KeyValuePair<string, object> entry in _options.TemplateData)
                 {
                     TemplateData.Add(entry.Key, entry.Value);
                 }
@@ -168,7 +175,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
         {
             Check.NotNull(entityType, nameof(entityType));
 
-            var collectionNavigations = entityType.GetScaffoldNavigations(_options.Value)
+            var collectionNavigations = entityType.GetScaffoldNavigations(_options)
                 .Where(n => n.IsCollection()).ToList();
 
             if (collectionNavigations.Count > 0)
@@ -230,7 +237,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
         {
             Check.NotNull(entityType, nameof(entityType));
 
-            var sortedNavigations = entityType.GetScaffoldNavigations(_options.Value)
+            var sortedNavigations = entityType.GetScaffoldNavigations(_options)
                 .OrderBy(n => n.IsDependentToPrincipal() ? 0 : 1)
                 .ThenBy(n => n.IsCollection() ? 1 : 0);
 

@@ -30,7 +30,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
     {
         private const string EntityLambdaIdentifier = "entity";
         private const string Language = "CSharp";
-        private readonly IOptions<HandlebarsScaffoldingOptions> _options;
+        private readonly HandlebarsScaffoldingOptions _options;
         private string _modelNamespace;
 
         /// <summary>
@@ -59,6 +59,11 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
         protected IEntityTypeTransformationService EntityTypeTransformationService { get; }
 
         /// <summary>
+        /// Service for dealing with template configuration
+        /// </summary>
+        protected ITemplateConfigurationService TemplateConfigurationService { get; }
+
+        /// <summary>
         /// Handlebars template data.
         /// </summary>
         protected Dictionary<string, object> TemplateData { get; set; }
@@ -74,13 +79,15 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
         /// <param name="dbContextTemplateService">Template service for DbContext generator.</param>
         /// <param name="entityTypeTransformationService">Service for transforming entity definitions.</param>
         /// <param name="options">Handlebars scaffolding options.</param>
+        /// <param name="templateConfigurationService">Template configuration service.</param>
         public HbsCSharpDbContextGenerator(
             [NotNull] IProviderConfigurationCodeGenerator providerConfigurationCodeGenerator, 
             [NotNull] IAnnotationCodeGenerator annotationCodeGenerator,
             [NotNull] IDbContextTemplateService dbContextTemplateService,
             [NotNull] IEntityTypeTransformationService entityTypeTransformationService,
             [NotNull] ICSharpHelper cSharpHelper,
-            [NotNull] IOptions<HandlebarsScaffoldingOptions> options)
+            [NotNull] IOptions<HandlebarsScaffoldingOptions> options,
+            [NotNull] ITemplateConfigurationService templateConfigurationService)
             : base(providerConfigurationCodeGenerator, annotationCodeGenerator, cSharpHelper)
         {
             ProviderConfigurationCodeGenerator = providerConfigurationCodeGenerator;
@@ -88,7 +95,9 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
             CSharpHelper = cSharpHelper;
             DbContextTemplateService = dbContextTemplateService;
             EntityTypeTransformationService = entityTypeTransformationService;
-            _options = options;
+            TemplateConfigurationService = templateConfigurationService;
+
+            _options = TemplateConfigurationService.SetOptions(options.Value);
         }
 
         /// <summary>
@@ -112,9 +121,9 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
 
             TemplateData = new Dictionary<string, object>();
 
-            if (_options.Value.TemplateData != null)
+            if (_options.TemplateData != null)
             {
-                foreach (KeyValuePair<string, object> entry in _options.Value.TemplateData)
+                foreach (KeyValuePair<string, object> entry in _options.TemplateData)
                 {
                     TemplateData.Add(entry.Key, entry.Value);
                 }
@@ -289,7 +298,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
                 using (sb.Indent())
                 {
 
-                    foreach (var entityType in model.GetScaffoldEntityTypes(_options.Value))
+                    foreach (var entityType in model.GetScaffoldEntityTypes(_options))
                     {
                         _entityTypeBuilderInitialized = false;
 
@@ -325,7 +334,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
         {
             var dbSets = new List<Dictionary<string, object>>();
 
-            foreach (var entityType in model.GetScaffoldEntityTypes(_options.Value))
+            foreach (var entityType in model.GetScaffoldEntityTypes(_options))
             {
                 var transformedEntityName = EntityTypeTransformationService.TransformEntityName(entityType.Name);
                 dbSets.Add(new Dictionary<string, object>
@@ -427,7 +436,7 @@ namespace EntityFrameworkCore.Scaffolding.Handlebars
                 GenerateProperty(property, useDataAnnotations, sb);
             }
 
-            foreach (var foreignKey in entityType.GetScaffoldForeignKeys(_options.Value))
+            foreach (var foreignKey in entityType.GetScaffoldForeignKeys(_options))
             {
                 GenerateRelationship(foreignKey, useDataAnnotations, sb);
             }
